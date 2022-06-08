@@ -1,0 +1,155 @@
+---
+asyncapi: 2.4.0
+defaultContentType: application/json
+info:
+  title: ndoms Streetlights Kafka API
+  version: 1.0.0
+  description: |
+    The Smartylighting Streetlights API allows you to remotely manage the city lights.
+
+    ### Check out its awesome features:
+
+    * Turn a specific streetlight on/off 🌃
+    * Dim a specific streetlight 😎
+    * Receive real-time information about environmental lighting conditions 📈
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+channels:
+  ndoms.smartylighting.streetlights.1.0.event.{streetlightId}.lighting.measured:
+    description: The topic on which measured values may be produced and consumed.
+    publish:
+      operationId: receiveLightMeasurement
+      summary: Inform about environmental lighting conditions of a particular streetlight.
+      traits:
+      - $ref: '#/components/operationTraits/kafka'
+      message:
+        $ref: '#/components/messages/lightMeasured'
+    parameters:
+      streetlightId:
+        $ref: '#/components/parameters/streetlightId'
+  ndoms.smartylighting.streetlights.1.0.action.1.turn.on:
+    subscribe:
+      operationId: turnOn
+      traits:
+      - $ref: '#/components/operationTraits/kafka'
+      message:
+        name: rrr
+        $ref: '#/components/messages/turnOnOff'
+        examples:
+        - payload: ee
+          name: rrr
+  ndoms.smartylighting.streetlights.1.0.action.1.turn.off:
+    subscribe:
+      operationId: turnOff
+      traits:
+      - $ref: '#/components/operationTraits/kafka'
+      message:
+        $ref: '#/components/messages/turnOnOff'
+    parameters:
+      streetlightId:
+        $ref: '#/components/parameters/streetlightId'
+  ndoms.smartylighting.streetlights.1.0.action.{streetlightId}.dim:
+    subscribe:
+      operationId: dimLight
+      traits:
+      - $ref: '#/components/operationTraits/kafka'
+      message:
+        $ref: '#/components/messages/dimLight'
+    parameters:
+      streetlightId:
+        $ref: '#/components/parameters/streetlightId'
+components:
+  schemas:
+    lightMeasuredPayload:
+      type: object
+      properties:
+        lumens:
+          description: Light intensity measured in lumens.
+          minimum: 0
+          type: integer
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
+    turnOnOffPayload:
+      type: object
+      properties:
+        command:
+          description: Whether to turn on or off the light.
+          enum:
+          - true
+          - false
+          type: string
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
+    dimLightPayload:
+      type: object
+      properties:
+        percentage:
+          description: Percentage to which the light should be dimmed to.
+          maximum: 100
+          minimum: 0
+          type: integer
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
+    sentAt:
+      format: date-time
+      description: Date and time when the message was sent.
+      type: string
+  messages:
+    lightMeasured:
+      contentType: application/json
+      name: lightMeasured
+      title: Light measured
+      summary: Inform about environmental lighting conditions of a particular streetlight.
+      payload:
+        $ref: '#/components/schemas/lightMeasuredPayload'
+      traits:
+      - $ref: '#/components/messageTraits/commonHeaders'
+    turnOnOff:
+      name: turnOnOff
+      title: Turn on/off
+      summary: Command a particular streetlight to turn the lights on or off.
+      examples:
+      - payload:
+          command: "on"
+          sentAt: 2019-08-24T14:15:22Z
+        name: true
+      - payload:
+          command: "off"
+          sentAt: 2019-08-24T14:15:22Z
+        name: false
+      payload:
+        $ref: '#/components/schemas/turnOnOffPayload'
+      traits:
+      - $ref: '#/components/messageTraits/commonHeaders'
+    dimLight:
+      name: dimLight
+      title: Dim light
+      summary: Command a particular streetlight to dim the lights.
+      payload:
+        $ref: '#/components/schemas/dimLightPayload'
+      traits:
+      - $ref: '#/components/messageTraits/commonHeaders'
+  securitySchemes:
+    saslScram:
+      type: scramSha256
+      description: Provide your username and password for SASL/SCRAM authentication
+  parameters:
+    streetlightId:
+      description: The ID of the streetlight.
+      schema:
+        type: string
+  operationTraits:
+    kafka:
+      bindings:
+        kafka:
+          clientId: ndoms-app-id
+  messageTraits:
+    commonHeaders:
+      headers:
+        type: object
+        properties:
+          my-app-header:
+            type: integer
+            minimum: 0
+            maximum: 100
